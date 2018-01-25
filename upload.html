@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title></title>
+		<script src="js/mui.min.js"></script>
+		<link href="css/mui.min.css" rel="stylesheet" />
+		<script type="text/javascript" charset="UTF-8">
+			mui.init();
+		</script>
+		<style type="text/css">
+			#content {
+				margin-top: 20px;
+			}
+			
+			#title,
+			#title textarea {
+				width: 100%;
+				height: 100px;
+				border: 1px solid #ccc;
+			}
+			
+			#forImg {
+				margin-top: 30px;
+				width: 100px;
+				height: 100px;
+				border: 1px solid #ccc;
+			}
+			
+			#forImg .mui-icon-plusempty {
+				display: inline-block;
+				width: 100px;
+				height: 100px;
+				font-size: 100px;
+				color: #ccc;
+			}
+			
+			#content button {
+				display: inline-block;
+				margin-left: 40%;
+			}
+		</style>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">发表</h1>
+		</header>
+		<div class="mui-content">
+			<div id="content">
+				<div id="title">
+					<textarea id="ctx" name="" rows="" cols="">
+						
+					</textarea>
+				</div>
+				<div id="forImg">
+					<img id="img1" />
+					<font class="mui-icon mui-icon-plusempty"></font>
+				</div>
+				<button type="button" class="mui-btn mui-btn-blue">确认发表</button>
+			</div>
+
+		</div>
+
+		<script type="text/javascript" src="js/jquery.min.js"></script>
+		<script type="text/javascript">
+			$(document).ready(function() {
+				var zipimg; // 压缩
+				var fullPath; // 路径
+				var b64; //  b64
+				mui.plusReady(function() {
+					mui('body').on('tap', '.mui-icon-plusempty', function() {
+						captureImage();
+					});
+				});
+
+				function captureImage() {
+					//获得摄像头
+					var cmr = plus.camera.getCamera();
+					cmr.captureImage(function(path) {
+							//路径转换
+							plus.io.resolveLocalFileSystemURL(path, function(entry) {
+								fullPath = entry.fullPath;
+								// 图片压缩
+								zipimg = function(path, cb) {
+										// 获得b64 
+										// 压缩图片
+										var ie = document.createElement('img');
+										ie.src = path;
+										ie.onload = function() {
+											var scale = this.width / this.height;
+											var width = 100;
+											var height = width / scale;
+											// canvas : 画一张图片
+											var canvas = document.createElement('canvas');
+											var ctx = canvas.getContext('2d');
+											canvas.width = width;
+											canvas.height = height;
+											ctx.drawImage(this, 0, 0, width, height);
+											// 返回 b64
+											b64 = canvas.toDataURL("image/jpeg", 0.6);
+											cb(b64);
+										}
+									}
+									// 
+							}, function() {
+								alert("拍照失败");
+							});
+						},
+						function(error) {
+							alert("Capture image failed: " + error.message);
+						}
+					);
+				} //endCap
+				mui('body').on('tap', 'button', function() {
+					mui.toast('aaaaa');
+					var user = plus.webview.currentWebview().user;
+					var content = document.getElementById("ctx").value;
+					if (zipimg) {
+						zipimg(fullPath, function(b64) {
+							console.log(b64);	
+//							mui.ajax("http://101.132.167.44:8080/advisory/img/bmpShow.do?path=/uploaddact/admin/1516283269152430045.jpg",{
+//								
+//							})
+
+							var img = document.createElement('img');
+							img.src = b64;
+//							document.getElementById("img1").src = b64;
+						});
+					}
+					mui.ajax("http://101.132.167.44:8080/advisory/img/uploadImage.do", {
+						data: {
+							user: user,
+							circleBase64:b64,
+							content: content
+						},
+						type: 'get',
+						dataType: 'json',
+						success: function(data) {
+							if(data.cade == 100){
+								mui.toast('发表成功！');
+								mui.openWindow({
+									url:'index.html',
+									id:'index'
+								})
+							}else{
+								mui.toast('发表失败，您可以重新发表');
+							}
+						}
+					});
+				});
+			});
+		</script>
+	</body>
+
+</html>
